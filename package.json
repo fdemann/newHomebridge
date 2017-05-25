@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AIIenGY/homebridge-mqttScene.git"
+    "url": "git+https://github.com/AIIenGY/homebridge-mqttCtrl.git"
   },
   "keywords": [
     "homebridge-plugin",
@@ -18,9 +18,9 @@
   "author": "AIIenGY",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/AIIenGY/homebridge-mqttScene/issues"
+    "url": "https://github.com/AIIenGY/homebridge-mqttCtrl/issues"
   },
-  "homepage": "https://github.com/AIIenGY/homebridge-mqttScene#readme",
+  "homepage": "https://github.com/AIIenGY/homebridge-mqttCtrl#readme",
   "engines": {
     "node": ">=0.12.0",
     "homebridge": ">=0.2.0"
