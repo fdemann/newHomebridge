@@ -9,5 +9,5 @@ Follow the instruction in homebridge for the homebridge server installation. The
 `npm install -g homebridge-mqttctrl`
 
 # Sample Configuration
-
+sample config is in config.json example
 ...
