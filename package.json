@@ -1,5 +1,5 @@
 {
-  "name": "homebridge-mqttCtrl",
+  "name": "homebridge-mqttctrl",
   "version": "1.0.0",
   "description": "MQTT contorl plugin for homebridge",
   "main": "index.js",
