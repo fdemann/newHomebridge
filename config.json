@@ -5,7 +5,7 @@
         "port": 51826,
         "pin": "031-45-155"
     },
-    "description": "This has some fake accessories",
+    "description": "There are some fake accessories",
 
     "platforms": [
         {
@@ -20,12 +20,12 @@
                 {
                     "type" : "scene",
                     "name" : "Start Meeting",
-                    "id"  : 100
+                    "id"  : "100"
                 },
                 {
                     "type" : "scene",
                     "name" : "Close Meeting",
-                    "id"  : 101
+                    "id"  : "101"
                 },
                 {
                     "type" : "device",
