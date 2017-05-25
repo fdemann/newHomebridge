@@ -1,0 +1,31 @@
+{
+  "name": "homebridge-mqttCtrl",
+  "version": "1.0.0",
+  "description": "MQTT contorl plugin for homebridge",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AIIenGY/homebridge-mqttScene.git"
+  },
+  "keywords": [
+    "homebridge-plugin",
+    "homekit",
+    "smartHome"
+  ],
+  "author": "AIIenGY",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/AIIenGY/homebridge-mqttScene/issues"
+  },
+  "homepage": "https://github.com/AIIenGY/homebridge-mqttScene#readme",
+  "engines": {
+    "node": ">=0.12.0",
+    "homebridge": ">=0.2.0"
+  },
+  "dependencies": {
+    "mqtt": "^1.6.3"
+  }
+}
