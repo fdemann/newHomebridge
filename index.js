@@ -212,6 +212,9 @@ mqttCtrlPlatform.prototype.configureAccessory = function(accessory) {
                       .on('get', deviceAccessory.getStatus.bind(deviceAccessory))
                       .on('set', deviceAccessory.setStatus.bind(deviceAccessory));
                 }
+                
+                var reqStatusMsg = '{"message":"request status","device":{"address":"' + object.id + '"}}';
+                this.mqttPub(reqStatusMsg);
             }
             break;
         default:    
@@ -258,8 +261,8 @@ mqttCtrlPlatform.prototype.removeAccessory = function(accessory) {
 
 mqttCtrlPlatform.prototype.mqttPub = function(message) {
     var platform = this;
-        this.log("mqttPub function");
+    //this.log("mqttPub function");
 
-    //platform.client.publish(platform.topicPub, message, platform.publish_options);
+    platform.client.publish(platform.topicPub, message, platform.publish_options);
 }
 
