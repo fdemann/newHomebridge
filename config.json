@@ -29,8 +29,18 @@
                 },
                 {
                     "type" : "device",
+                    "name" : "light",
+                    "id"  : "89D3E908004B1200"
+                },
+                {
+                    "type" : "device",
                     "name" : "AC",
-                    "id"  : "48CF0000000024"
+                    "id"  : "48CF1E07004B12002B"
+                },
+                {
+                    "type" : "sensor",
+                    "name" : "sensor",
+                    "id"  : "2FEDDF03004B1200"
                 }
             ]
         }
