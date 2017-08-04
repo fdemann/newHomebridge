@@ -1,7 +1,6 @@
 'use strict';
 
-const SceneAccessory = require('./lib/SceneAccessory.js');
-const DeviceAccessory = require('./lib/DeviceAccessory.js');
+var SceneAccessory, DeviceAccessory, SensorAccessory;
 
 var Accessory, Service, Characteristic, UUIDGen;
 
@@ -13,9 +12,10 @@ const CON_TIMEOUT = 5 * 1000;
 
 const SCENE_OBJ_TYPE = "scene";
 const DEVICE_OBJ_TYPE = "device";
+const SENSOR_OBJ_TYPE = "sensor";
 
 var is_supported_type = function(v) {
-    return v === SCENE_OBJ_TYPE || v === DEVICE_OBJ_TYPE;
+    return v === SCENE_OBJ_TYPE || v === DEVICE_OBJ_TYPE || v === SENSOR_OBJ_TYPE;
 }
 
 module.exports = function(homebridge) {
@@ -26,6 +26,10 @@ module.exports = function(homebridge) {
     Service = homebridge.hap.Service;
     Characteristic = homebridge.hap.Characteristic;
     UUIDGen = homebridge.hap.uuid;
+    
+    SceneAccessory = require('./lib/SceneAccessory.js')(Accessory, Service, Characteristic);
+    DeviceAccessory = require('./lib/DeviceAccessory.js')(Accessory, Service, Characteristic);
+    SensorAccessory = require('./lib/SensorAccessory.js')(Accessory, Service, Characteristic);
 
     homebridge.registerPlatform("homebridge-mqttCtrl", "mqttCtrlPlatform", mqttCtrlPlatform, false);
 }
@@ -39,6 +43,7 @@ function mqttCtrlPlatform(log, config, api) {
     this.accessories = [];
     this.sceneAccessoryArray = [];
     this.deviceAccessoryArray = [];
+    this.sensorAccessoryArray = [];
 
     this.url = config["MQTT_url"];
     this.publish_options = {
@@ -104,6 +109,29 @@ function mqttCtrlPlatform(log, config, api) {
                         var devObj = devObjs[index];
                         devObj.processMQTT(jsonObj);
                     }
+                    
+                    /* sensor */
+                    var sensorObjs = that.sensorAccessoryArray.filter(function(item) {
+                        return item.context.id == jsonObj.device.address && item.context.type == SENSOR_OBJ_TYPE;
+                    });
+
+                    for (var index in sensorObjs) {
+                        var sensorObj = sensorObjs[index];
+                        sensorObj.processMQTT(jsonObj);
+                    }
+                }
+                else if(jsonObj.message === "device properties changed" )
+                {
+                    //that.log(topic +":[" + message.toString()+"].");
+
+                    var sensorObjs = that.sensorAccessoryArray.filter(function(item) {
+                        return item.context.id == jsonObj.device.address && item.context.type == SENSOR_OBJ_TYPE;
+                    });
+
+                    for (var index in sensorObjs) {
+                        var sensorObj = sensorObjs[index];
+                        sensorObj.processMQTT(jsonObj);
+                    }
                 }
             } catch(e) {
                 that.log("invalid json string: " + response);
@@ -155,14 +183,12 @@ mqttCtrlPlatform.prototype.addObject = function(object) {
         var newAccessory = new Accessory(object.name, uuid);
 
         newAccessory.getService(Service.AccessoryInformation)
-            .setCharacteristic(Characteristic.Manufacturer, platform.config.manufacturer ? platform.config.manufacturer : "Raspberry Pi Foundation")
+            .setCharacteristic(Characteristic.Manufacturer, platform.config.manufacturer ? platform.config.manufacturer : "CT DD DS SZ")
             .setCharacteristic(Characteristic.Model, platform.config.model ? platform.config.model : "MQTT Ctrl")
-            .setCharacteristic(Characteristic.SerialNumber, platform.config.serial ? platform.config.serial : "Default-SerialNumber");
-
-        newAccessory.addService(Service.Switch, object.name);
+            .setCharacteristic(Characteristic.SerialNumber, platform.config.serial ? platform.config.serial : "12-345-ABCD");
 
         newAccessory.context = object;
-          
+        
         this.configureAccessory(newAccessory);
 
         this.api.registerPlatformAccessories("homebridge-mqttCtrlPlatform", "mqttCtrlPlatform", [newAccessory]);    
@@ -175,44 +201,114 @@ mqttCtrlPlatform.prototype.configureAccessory = function(accessory) {
     //this.log(accessory.displayName, "Configure Accessory", accessory.UUID);
     var platform = this;
     var object = accessory.context;
-
+    
     if(platform.config.overrideCache === "true") {
         var newContext = platform.objects.find( p => p.name === accessory.context.name );
         accessory.context = newContext;
-    }
- 
-    var onChar;
-    if (accessory.getService(Service.Switch)) { 
-        onChar = accessory.getService(Service.Switch).getCharacteristic(Characteristic.On);
     }
 
     switch(object.type)
     {
         case SCENE_OBJ_TYPE:
-            {  
-                var sceneAccessory = new SceneAccessory(platform.log, accessory, onChar, platform.client, platform.topicPub);
+            {
+                if(!accessory.getService(Service.Switch))
+                {
+                    accessory.addService(Service.Switch, object.name);
+                }
+                
+                var sceneAccessory = new SceneAccessory(platform.log, accessory, platform.client, platform.topicPub);
                 platform.sceneAccessoryArray.push(sceneAccessory);
 
-                if (accessory.getService(Service.Switch)) {
-                    accessory.getService(Service.Switch)
-                      .getCharacteristic(Characteristic.On)
-                      .on('get', sceneAccessory.getStatus.bind(sceneAccessory))
-                      .on('set', sceneAccessory.setStatus.bind(sceneAccessory));
-                }
+                accessory.getService(Service.Switch)
+                  .getCharacteristic(Characteristic.On)
+                  .on('get', sceneAccessory.getStatus.bind(sceneAccessory))
+                  .on('set', sceneAccessory.setStatus.bind(sceneAccessory));
             }
             break;
         case DEVICE_OBJ_TYPE:
-            {  
-                var deviceAccessory = new DeviceAccessory(platform.log, accessory, onChar, platform.client, platform.topicPub);
-                platform.deviceAccessoryArray.push(deviceAccessory);
-
-                if (accessory.getService(Service.Switch)) {
-                    accessory.getService(Service.Switch)
-                      .getCharacteristic(Characteristic.On)
-                      .on('get', deviceAccessory.getStatus.bind(deviceAccessory))
-                      .on('set', deviceAccessory.setStatus.bind(deviceAccessory));
+            {
+                if(!accessory.getService(Service.Switch))
+                {
+                    accessory.addService(Service.Switch, object.name);
                 }
                 
+                var deviceAccessory = new DeviceAccessory(platform.log, accessory, platform.client, platform.topicPub);
+                platform.deviceAccessoryArray.push(deviceAccessory);
+
+                accessory.getService(Service.Switch)
+                  .getCharacteristic(Characteristic.On)
+                  .on('get', deviceAccessory.getStatus.bind(deviceAccessory))
+                  .on('set', deviceAccessory.setStatus.bind(deviceAccessory));
+                
+                var reqStatusMsg = '{"message":"request status","device":{"address":"' + object.id + '"}}';
+                this.mqttPub(reqStatusMsg);
+            }
+            break;
+        case SENSOR_OBJ_TYPE:
+            {
+                if(!accessory.getService(Service.TemperatureSensor))
+                {
+                    accessory.addService(Service.TemperatureSensor, object.name+"-Temperature");
+                }
+                
+                if(!accessory.getService(Service.HumiditySensor))
+                {
+                    accessory.addService(Service.HumiditySensor, object.name+"-Humidity");
+                }
+                
+                if(!accessory.getService(Service.AirQualitySensor))
+                {
+                    accessory.addService(Service.AirQualitySensor, object.name+"-AirQuality");
+                }
+                
+                if(!accessory.getService(Service.BatteryService))
+                {
+                    accessory.addService(Service.BatteryService, object.name+"-Battery");
+                }
+                
+                var sensorAccessory = new SensorAccessory(platform.log, accessory, Service, Characteristic);
+                platform.sensorAccessoryArray.push(sensorAccessory);
+                
+                accessory.getService(Service.TemperatureSensor)
+                  .getCharacteristic(Characteristic.CurrentTemperature)
+                  .setProps({ minValue: -20, maxValue: 60 })
+                  .on('get', sensorAccessory.getTemp.bind(sensorAccessory));
+                  
+                accessory.getService(Service.HumiditySensor)
+                  .getCharacteristic(Characteristic.CurrentRelativeHumidity)
+                  .setProps({ minValue: 0, maxValue: 100 })
+                  .on('get', sensorAccessory.getHumidity.bind(sensorAccessory));
+                  
+                accessory.getService(Service.AirQualitySensor)
+                  .getCharacteristic(Characteristic.AirQuality)
+                  .on('get', sensorAccessory.getAirQuality.bind(sensorAccessory));
+
+                if(accessory.getService(Service.AirQualitySensor)
+                  .getCharacteristic(Characteristic.PM2_5Density))
+                {
+                    accessory.getService(Service.AirQualitySensor)
+                        .getCharacteristic(Characteristic.PM2_5Density)
+                        .on('get', sensorAccessory.getPM2_5.bind(sensorAccessory));
+                }
+                else
+                {
+                    accessory.getService(Service.AirQualitySensor)
+                        .addCharacteristic(Characteristic.PM2_5Density)
+                        .on('get', sensorAccessory.getPM2_5.bind(sensorAccessory));
+                }
+                
+                accessory.getService(Service.BatteryService)
+                  .getCharacteristic(Characteristic.BatteryLevel)
+                  .on('get', sensorAccessory.getBatteryLevel.bind(sensorAccessory));
+                  
+                accessory.getService(Service.BatteryService)
+                  .getCharacteristic(Characteristic.ChargingState)
+                  .on('get', sensorAccessory.getChargingState.bind(sensorAccessory));
+                
+                accessory.getService(Service.BatteryService)
+                  .getCharacteristic(Characteristic.StatusLowBattery)
+                  .on('get', sensorAccessory.getStatusLowBattery.bind(sensorAccessory));
+                  
                 var reqStatusMsg = '{"message":"request status","device":{"address":"' + object.id + '"}}';
                 this.mqttPub(reqStatusMsg);
             }
@@ -261,7 +357,7 @@ mqttCtrlPlatform.prototype.removeAccessory = function(accessory) {
 
 mqttCtrlPlatform.prototype.mqttPub = function(message) {
     var platform = this;
-    //this.log("mqttPub function");
+    this.log("mqttPub function:"+message);
 
     platform.client.publish(platform.topicPub, message, platform.publish_options);
 }
