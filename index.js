@@ -27,9 +27,9 @@ module.exports = function(homebridge) {
     Characteristic = homebridge.hap.Characteristic;
     UUIDGen = homebridge.hap.uuid;
     
-    SceneAccessory = require('./lib/SceneAccessory.js')(Accessory, Service, Characteristic);
-    DeviceAccessory = require('./lib/DeviceAccessory.js')(Accessory, Service, Characteristic);
-    SensorAccessory = require('./lib/SensorAccessory.js')(Accessory, Service, Characteristic);
+    SceneAccessory = require('./lib/SceneAccessory.js')(Service, Characteristic);
+    DeviceAccessory = require('./lib/DeviceAccessory.js')(Service, Characteristic);
+    SensorAccessory = require('./lib/SensorAccessory.js')(Service, Characteristic);
 
     homebridge.registerPlatform("homebridge-mqttCtrl", "mqttCtrlPlatform", mqttCtrlPlatform, false);
 }
@@ -184,7 +184,7 @@ mqttCtrlPlatform.prototype.addObject = function(object) {
 
         newAccessory.getService(Service.AccessoryInformation)
             .setCharacteristic(Characteristic.Manufacturer, platform.config.manufacturer ? platform.config.manufacturer : "CT DD DS SZ")
-            .setCharacteristic(Characteristic.Model, platform.config.model ? platform.config.model : "MQTT Ctrl")
+            .setCharacteristic(Characteristic.Model, platform.config.model ? platform.config.model : "Gateway")
             .setCharacteristic(Characteristic.SerialNumber, platform.config.serial ? platform.config.serial : "12-345-ABCD");
 
         newAccessory.context = object;
@@ -216,7 +216,7 @@ mqttCtrlPlatform.prototype.configureAccessory = function(accessory) {
                     accessory.addService(Service.Switch, object.name);
                 }
                 
-                var sceneAccessory = new SceneAccessory(platform.log, accessory, platform.client, platform.topicPub);
+                var sceneAccessory = new SceneAccessory(platform, accessory);
                 platform.sceneAccessoryArray.push(sceneAccessory);
 
                 accessory.getService(Service.Switch)
@@ -232,7 +232,7 @@ mqttCtrlPlatform.prototype.configureAccessory = function(accessory) {
                     accessory.addService(Service.Switch, object.name);
                 }
                 
-                var deviceAccessory = new DeviceAccessory(platform.log, accessory, platform.client, platform.topicPub);
+                var deviceAccessory = new DeviceAccessory(platform, accessory);
                 platform.deviceAccessoryArray.push(deviceAccessory);
 
                 accessory.getService(Service.Switch)
@@ -241,14 +241,14 @@ mqttCtrlPlatform.prototype.configureAccessory = function(accessory) {
                   .on('set', deviceAccessory.setStatus.bind(deviceAccessory));
                 
                 var reqStatusMsg = '{"message":"request status","device":{"address":"' + object.id + '"}}';
-                this.mqttPub(reqStatusMsg);
+                this.mqttPub(this, reqStatusMsg);
             }
             break;
         case SENSOR_OBJ_TYPE:
             {
                 if(!accessory.getService(Service.TemperatureSensor))
                 {
-                    accessory.addService(Service.TemperatureSensor, object.name+"-Temperature");
+                    accessory.addService(Service.TemperatureSensor, object.name+"-Temp");
                 }
                 
                 if(!accessory.getService(Service.HumiditySensor))
@@ -266,7 +266,7 @@ mqttCtrlPlatform.prototype.configureAccessory = function(accessory) {
                     accessory.addService(Service.BatteryService, object.name+"-Battery");
                 }
                 
-                var sensorAccessory = new SensorAccessory(platform.log, accessory, Service, Characteristic);
+                var sensorAccessory = new SensorAccessory(platform, accessory);
                 platform.sensorAccessoryArray.push(sensorAccessory);
                 
                 accessory.getService(Service.TemperatureSensor)
@@ -310,7 +310,7 @@ mqttCtrlPlatform.prototype.configureAccessory = function(accessory) {
                   .on('get', sensorAccessory.getStatusLowBattery.bind(sensorAccessory));
                   
                 var reqStatusMsg = '{"message":"request status","device":{"address":"' + object.id + '"}}';
-                this.mqttPub(reqStatusMsg);
+                this.mqttPub(this, reqStatusMsg);
             }
             break;
         default:    
@@ -355,8 +355,7 @@ mqttCtrlPlatform.prototype.removeAccessory = function(accessory) {
     this.accessories = [];
 }
 
-mqttCtrlPlatform.prototype.mqttPub = function(message) {
-    var platform = this;
+mqttCtrlPlatform.prototype.mqttPub = function(platform, message) {
     this.log("mqttPub function:"+message);
 
     platform.client.publish(platform.topicPub, message, platform.publish_options);
