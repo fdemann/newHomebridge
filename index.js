@@ -47,7 +47,7 @@ function mqttCtrlPlatform(log, config, api) {
 
     this.url = config["MQTT_url"];
     this.publish_options = {
-        qos: 1
+        qos: 2
     };
     this.options = {
         keepalive: 10,
