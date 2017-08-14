@@ -445,13 +445,7 @@ mqttCtrlPlatform.prototype.removeAccessory = function(accessory) {
     this.accessories = [];
 }
 
-/*mqttCtrlPlatform.prototype.mqttPub = function(platform, message) {
-    this.log("mqttPub function:"+message);
-
-    platform.client.publish(platform.topicPub, message, platform.publish_options);
-}*/
-
-
+//unified funtion to send mqttMsg with buffer that pushes msg to array if connection hasnt been established
 mqttCtrlPlatform.prototype.mqttPub = function(platform, message) {
   if (platform.mqttConected === false) {
     console.log("mqttMsg buffered");
