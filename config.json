@@ -5,27 +5,27 @@
         "port": 51826,
         "pin": "031-45-155"
     },
-    "description": "There are some fake accessories",
+    "description": "This has some fake accessories",
 
     "platforms": [
         {
             "platform" : "mqttCtrlPlatform",
-            "name" : "MQTT Control",
+            "name" : "MQTT Control",            
             "overrideCache" : "true",
-            "MQTT_url": "mqtt://192.168.0.1",
+            "MQTT_url": "mqtt://120.24.236.253",
             "MQTT_usr": "test",
             "MQTT_pwd": "test",
-            "gwID" : "gatewayID",
+            "gwID": "E7D3CB0A004B12000A",
             "objects" : [
                 {
                     "type" : "scene",
-                    "name" : "Start Meeting",
-                    "id"  : "100"
+                    "name" : "meeting start",
+                    "id"  : "1"
                 },
                 {
                     "type" : "scene",
-                    "name" : "Close Meeting",
-                    "id"  : "101"
+                    "name" : "meeting close",
+                    "id"  : "2"
                 },
                 {
                     "type" : "device",
@@ -33,15 +33,52 @@
                     "id"  : "89D3E908004B1200"
                 },
                 {
-                    "type" : "device",
-                    "name" : "AC",
+                    "type" : "thermostat",
+                    "name" : "ac",
                     "id"  : "48CF1E07004B12002B"
                 },
                 {
                     "type" : "sensor",
                     "name" : "sensor",
                     "id"  : "2FEDDF03004B1200"
-                }
+                },
+		{
+		    "type" : "device",
+		    "name" : "curtain1",
+		    "id"  : "ECCD5109004B1200"
+		},
+		{
+		    "type" : "device",
+		    "name" : "curtain2",
+		    "id"  : "96CD5109004B1200"
+		},
+		{
+		    "type" : "device",
+		    "name" : "curtain3",
+		    "id"  : "73D05109004B1200"
+		},
+		{
+		    "type" : "device",
+		    "name" : "screen",
+		    "id"  : "8CD15109004B1200"
+		},
+		{   "type" : "thermostat",
+		    "name" : "ac1",
+		    "id"  : "48CF1E07004B120023"
+		},
+		{   "type" : "thermostat",
+		    "name" : "ac2",
+		    "id"  : "48CF1E07004B120024"
+		},
+		{
+		    "type" : "thermostat",
+		    "name" : "acPrinceton",
+		    "id"  : "48CF1E07004B12001E"
+		},
+		{   "type" : "device",
+		    "name" : "socket",
+		    "id"  : "F55C1C07004B1200"
+		}
             ]
         }
     ],

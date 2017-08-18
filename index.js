@@ -103,7 +103,7 @@ function mqttCtrlPlatform(log, config, api) {
             try {
                 var jsonObj = JSON.parse(response);
 
-                if(jsonObj.message === "scene active response")
+                if(jsonObj.message === "scene active response") //maybe replace with switch statement
                 {
                     //that.log(topic +":[" + message.toString()+"].");
 
@@ -172,6 +172,115 @@ function mqttCtrlPlatform(log, config, api) {
                         thermoObj.processMQTT(jsonObj);
                     }
                 }
+                else if(jsonObj.message === "list device") {
+
+                  //console.log ("List device message received: " + JSON.stringify(jsonObj.message));
+                  //compare devices in array of mqtt Message to devicees in (platform) this.accessories
+
+                  //loop first through this.accessories as it will be bigger or same size (probably does not matter)
+                  //console.log(jsonObj.devices[0]);
+                  //accessory.context.id
+
+                for (var i = 0; i < platform.accessories.length; i++) {
+                    var addedAccessory = platform.accessories[i];
+                    for (var index in jsonObj.devices) {
+                      var jsonAccessory = jsonObj.devices[index];
+                      if (addedAccessory.context.id === jsonAccessory.address) {
+                          addedAccessory.updateReachability(true);
+                      }
+                    }
+                  }
+
+                }
+                else if(jsonObj.message === "device add") {
+                  //find device type and push message to processMQTT of that device
+                  //in processMQTT update reachability of that device
+
+                  /*mqttCtrlPlatform.prototype.updateAccessoriesReachability = function() {
+                    this.log("Update Reachability");
+
+                      var accessory = this.accessories.filter(function(item) {
+                          return item.context.id == jsonObj.device.address;
+                      });
+                      accessory.updateReachability(true);*/
+
+                  //devices
+                  var devObjs = that.deviceAccessoryArray.filter(function(item) {
+                      return item.context.id == jsonObj.device.address && item.context.type == DEVICE_OBJ_TYPE;
+                  });
+
+                  for (var index in devObjs) {
+                      var devObj = devObjs[index];
+                      //accessory.reachable = true;
+                      devObj.processMQTT(jsonObj);
+                  }
+
+                  //sensor
+                  var sensorObjs = that.sensorAccessoryArray.filter(function(item) {
+                      return item.context.id == jsonObj.device.address && item.context.type == SENSOR_OBJ_TYPE;
+                  });
+
+                  for (var index in sensorObjs) {
+                      var sensorObj = sensorObjs[index];
+                      sensorObj.processMQTT(jsonObj);
+                  }
+
+                  //Thermostat/AC
+                  var thermoObjs = that.thermostatAccessoryArray.filter(function(item) {
+                      return item.context.id == jsonObj.device.address && item.context.type == THERMOSTAT_OBJ_TYPE;
+                  });
+
+                  for (var index in thermoObjs) {
+                      var thermoObj = thermoObjs[index];
+                      thermoObj.processMQTT(jsonObj);
+                  }
+                }
+                else if(jsonObj.message === "device remove") {
+                  //find device type and push message to processMQTT of that device
+                  //in processMQTT update reachability of that device
+
+                  console.log("mqttMsg: " + JSON.stringify(jsonObj));
+
+                  /*mqttCtrlPlatform.prototype.updateAccessoriesReachability = function() {
+                    this.log("Update Reachability");
+
+                      var accessory = this.accessories.filter(function(item) {
+                          return item.context.id == jsonObj.device.address;
+                      });
+                      accessory.updateReachability(false);
+
+                  }*/
+
+                  //devices
+                  var devObjs = that.deviceAccessoryArray.filter(function(item) {
+                      return item.context.id == jsonObj.device.address && item.context.type == DEVICE_OBJ_TYPE;
+                  });
+
+                  for (var index in devObjs) {
+                      var devObj = devObjs[index];
+                      devObj.processMQTT(jsonObj);
+                  }
+
+                  //sensor
+                  var sensorObjs = that.sensorAccessoryArray.filter(function(item) {
+                      return item.context.id == jsonObj.device.address && item.context.type == SENSOR_OBJ_TYPE;
+                  });
+
+                  for (var index in sensorObjs) {
+                      var sensorObj = sensorObjs[index];
+                      sensorObj.processMQTT(jsonObj);
+                  }
+
+                  //Thermostat/AC
+                  var thermoObjs = that.thermostatAccessoryArray.filter(function(item) {
+                      return item.context.id == jsonObj.device.address && item.context.type == THERMOSTAT_OBJ_TYPE;
+                  });
+
+                  for (var index in thermoObjs) {
+                      var thermoObj = thermoObjs[index];
+                      thermoObj.processMQTT(jsonObj);
+                  }
+                }
             } catch(e) {
                 that.log("invalid json string: " + String(e));
                 return;
@@ -194,6 +303,9 @@ function mqttCtrlPlatform(log, config, api) {
                 this.addObject(this.objects[i]);
             }
         }.bind(this));
+
+        var mqttMsg = '{"message":"list device"}';
+        this.mqttPub(this, mqttMsg);
     }
 }
 
@@ -367,8 +479,8 @@ mqttCtrlPlatform.prototype.configureAccessory = function(accessory) {
                 accessory.getService(Service.Thermostat)
                   .getCharacteristic(Characteristic.TargetTemperature)
                   .setProps({
-                    maxValue: 31,
-                    minValue: 16,
+                    maxValue: 29,
+                    minValue: 18,
                     minStep: 1
                     })
                   //.on('set', this.setTargetTemperature.bind(thermostatAccessory))
@@ -411,7 +523,8 @@ mqttCtrlPlatform.prototype.configureAccessory = function(accessory) {
     // set the accessory to reachable if plugin can currently process the accessory
     // otherwise set to false and update the reachability later by invoking
     // accessory.updateReachability()
-    accessory.reachable = true;
+    accessory.reachable = false;
+    //scene.accessory.reachable = true; //or use updateReachability?
 
     // Handle the 'identify' event
     accessory.on('identify', function(paired, callback) {
@@ -427,14 +540,6 @@ mqttCtrlPlatform.prototype.configureAccessory = function(accessory) {
 //Callback can be cached and invoke when necessary
 mqttCtrlPlatform.prototype.configurationRequestHandler = function(context, request, callback) {
     console.log("Not Implemented");
-}
-
-mqttCtrlPlatform.prototype.updateAccessoriesReachability = function() {
-    this.log("Update Reachability");
-    for (var index in this.accessories) {
-        var accessory = this.accessories[index];
-        accessory.updateReachability(false);
-    }
 }
 
 // Sample function to show how developer can remove accessory dynamically from outside event
